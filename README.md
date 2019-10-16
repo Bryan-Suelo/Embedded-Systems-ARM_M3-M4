@@ -1,1 +1,1 @@
-# LFS101x_Introduction_to_Linux
+# LFS101x Introduction to Linux
