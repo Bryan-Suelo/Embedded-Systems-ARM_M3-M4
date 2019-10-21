@@ -76,7 +76,7 @@ every month. It has active sections on:
 * Free tutorials and user tips.
 
 ## Terminology
-###Introduction
+### Introduction
 When you start exploring Linux, you will soon come across some terms which may be
 unfamiliar, such as distribution, boot loader, desktop environment, etc. Before we proceed
 further, let's stop and take a look at some basic terminology used in Linux to help you get
@@ -154,5 +154,5 @@ certification. All major distributors provide update services for keeping your s
 primed with the latest security and bug fixes, and performance enhancements, as well as
 provide online support resources.
 
-![](LFS01_ch02_screen_24.png)
+![](LFS01_ch02_screen_24.jpg)
 Services Associated with Distributions
