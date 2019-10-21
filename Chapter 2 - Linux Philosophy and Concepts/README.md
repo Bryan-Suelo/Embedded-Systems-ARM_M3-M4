@@ -84,27 +84,27 @@ up to speed.
 
 ### Linux terminology
 1. **Kernel**
-..* The kernel is considered the brain of the Linux operating system. It controls hardware and makes the hardware interact with applications.
-..* Examples: Red Hat Enterprise Linux, Fedora, Ubuntu and Gentoo.
+* The kernel is considered the brain of the Linux operating system. It controls hardware and makes the hardware interact with applications.
+* Examples: Red Hat Enterprise Linux, Fedora, Ubuntu and Gentoo.
 2. **Boot loader**
-..* Program that boots the operating system.
-..* Examples: BRUB and ISOLINUX.
+* Program that boots the operating system.
+* Examples: BRUB and ISOLINUX.
 3. **Service**
-..* Program that runs as a background process
-..* Examples: httpd, nfsd, ntpd, ftpd and named.
+* Program that runs as a background process
+* Examples: httpd, nfsd, ntpd, ftpd and named.
 4. **Filesystem**
-..* Method for storing and organizing files
-..* Examples: ext3, ext4, FAT, XFS and Btrfs.
+* Method for storing and organizing files
+* Examples: ext3, ext4, FAT, XFS and Btrfs.
 5. **X Window System** 
-..* Provides the standard toolkit and protocol to build graphical user interfaces on nearly all Linux systems.
+* Provides the standard toolkit and protocol to build graphical user interfaces on nearly all Linux systems.
 6. **Desktop Environment**
-..* Graphical user interface on top of the operating system
-..* Examples: GNOME, KDE, Xfce and Fluxbox.
+* Graphical user interface on top of the operating system
+* Examples: GNOME, KDE, Xfce and Fluxbox.
 7. **Command Line**
-..* Interface for typing commands on top of the operating system.
+* Interface for typing commands on top of the operating system.
 8. **Shell**
-..* Command line interpreter that interprets the commnad line input and instructs the operating system to perform any necessary tasks and commands.
-..* Examples: bash, tcsh and zsh.
+* Command line interpreter that interprets the commnad line input and instructs the operating system to perform any necessary tasks and commands.
+* Examples: bash, tcsh and zsh.
 
 ## Distribution
 ### Introduction
