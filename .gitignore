@@ -1,0 +1,14 @@
+
+# Main folders
+Programs/
+Source_codes/
+CortexMxProgramming/
+
+# Project files
+DebugConfig/
+Listings/
+Objects/
+RTE/
+*.CAB1GA
+*.uvoptx
+*.uvprojx
