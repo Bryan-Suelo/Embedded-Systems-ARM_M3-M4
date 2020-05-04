@@ -271,3 +271,38 @@ The priority group field is a 3 bit field in the application interrupt.
 When you start the counter by loading some value, it starts decrementing for every processor clock cycle.
 * If it reaches zero, then it will raise a SysTick timer exception, and the again reloads the value and continue.
 * SysTick timer can be used for time keeping, time measurement, or as an interrupt source for task that need to be executed regularly.
+
+## Section 14: System Exceptions and Interrupts-II
+### Pending Interrupt behavior
+#### Single pended interrupt
+Processor Operation - Thread mode
+Interrupt Request - Interrupt assertion
+Interrupt Pending Status - Pending bit is set
+Processor Mode - Handler Mode
+Interrupt Active Status bit - Interrupt active bit set
+Processor Mode - Interrupt exit
+Processor Operation - Interrupt active bit cleared
+Processor Operation - Unstacking
+Processor Operation - Thread Mode
+Interrupt Pending Status - Pending bit is cleared
+
+### Exception entry sequence
+#### Exception entry sequence
+1. Pending bit set - Pending register from NVIC
+2. Stacking - Pushing the content of the registers in the content stack. 
+3. Vector fetch - Fetching the address of the exception handler from the vector table.
+4. Entry to the handler - Active bit set in the NVIC register. 
+5. Clear pending status - Processor does it automatically.
+6. Processor mode changed to handler mode.
+7. Handler code is executing.
+8. MSP will be used for any stack operations inside the handler.
+
+#### Exception exit sequence
+1. The exception return mechanism is triggered using a special return address called **```EXC_RETURN```**.
+2. ```EXC_RETURN``` is generated during exception entry and is stored in the LR.
+3. When ```EXC_RETURN``` is written to PC it triggers the exception return.
+4. During an exception handler entry, the value of the return address(PC) is not stored in the LR as it is done during calling of a normal C function. Instead the exception mechanism stores the special value called EXC_RETURN in LR.
+
+### Programming and configuring LED using registers
+#### Steps to configure LEDs
+* Enable the clock for the GPIO Port where LED is connected
