@@ -274,4 +274,79 @@ int main(void)
     #### Calculate alias address
     ``` Alias_address = alias_base + (32 * (bit_band_memory_addr - bit_band_base)) + bit * 4 ```
 
+## Section 9: Stack memory and placement
+### Stack memory
+* Stack memory is part of the main memory (Internal RAM or External RAM) reserver for temporary storage of data (transient data).
+* Mainly used during function, interrupt/exception handling.
+* Accessed in last in first out fashion.
+* Stack memory can be accessed using _PUSH_ and _POP_ instructions or using any memory manipulation instructions (_LD_, _STR_).
+* The stack is traced using a _Stack Pointer_ (SP) register. _PUSH_ and _POP_ instructions affect (decrement or increment) stack pointer register (SP, R13).
 
+    #### Stack Memory uses
+    1. The temporary storage of processor register values
+    2. The temporary storage of local variables of the function
+    3. During system exception or interrupt, stack memory will be used to save the context (some general purpose registers, processor status register, return address) of the currently executing code
+
+### Stack operation models
+* Full ascending stack (FA)
+    - SP value is incrementing
+    - SP is pointed to the last item
+* Full descending stack (FD) **ARM Cortex Mx processors use this**
+    - SP will decrease to lower memory address
+    - SP will be pointing to the last item
+* Empty ascending stak (EA)
+    - SP will be always pointing to the current empty item 
+    - SP value is moving to incremental address
+* Empty descending stack (ED)
+    - SP will be always pointing to the current empty item
+
+    #### Stack placement
+    Application should be like this:
+    - Stack 
+    - Unused space
+    - Heap
+    - Data
+
+PUSH decrements
+POP increments
+
+### Banked stack pointers
+1. Cortex Mx processor physically has 3 stack pointers:
+    - SP - Stack Pointer (Register 13)
+    - MSP - Main Stack Pointer
+    - PSP - Process Stack Pointer
+2. After processor reset, by defualt, _MSP_ will be selected as current _Stack Pointer_. That means, SP copies the contents of _MSP_.
+3. _Thread mode_ can change the current stack pointer to _PSP_ by configuring the **_CONTROL_** register's **_SPEL_** bit.
+4. _Handler mode_ code execution **will always use MSP as the current stack pointer**. This also means that, changing the value of _SPEL_ bit being in handler mode doesn't make any sense. The write will be ignored.
+5. MSP will be initialized automatically by the processor after reset by reading the content of the address 0x0000_0000
+6. If you want to use the PSP then make sure that you initialize the PSP to valid stack address in your code.
+
+### Procedure Call Standard for the ARM architecture
+Describes procedure call standard used by _Application Binary Interface_ (ABI) for ARM architecture.
+#### Scope
+Defines how subroutines can be separately writen, separately compiled and separately assembled to work together. It describes a contract between a calling subroutine and a called routine that defines:
+    - Obligations on the caller to create  aprogram state in which the called routine may start to execute.
+    - Obligations on the called routine to preserve the program state of the caller across the call.
+    - The rights of the called routine to alter the program state of its caller. 
+    - When a 'C' compiler compiles code for the ARM architecture, it should follow the AAPCS specification to generate code.
+    - According to this standard, a 'C' function can modify the registers R0,R1...R14(LR) and PSR. It's not the responsability of the function to save these registers before any modification
+    - If a function wants to make use of R4 to R11 registers, then it's the responsibility of the function to save its previous contents before modifying those registers and retrieve it back before exiting the function. 
+    - R0,R1,R2,R3,R12,R14(LR) registers are called _caller save registers_, it's the responsability of the caller to save these register on stack before calling the function if those values will still be needed after the function call and retrieve it back once the called function returns. Register values that are not required after the function call don't have to be saved. 
+    - R4 to R11 are called _callee saved registers_ the function or subroutine being called needs to make sure that, contents of these registers will be unaltered before exiting the function.
+    - According to this standard, caller function uses R0,R1,R2,R3 registers to send input arguments to the callee function.
+    - The callee function uses registers R0 and R1 to send the result back to the caller function.
+
+### Stack activites during interruption and exception
+* To allow a 'C' function to be used as an exception/interrupt handler, the exception mechanism needs to save R0 to R13,R12,LR and XPSR at exception entrance automatically and restore them at exception exit under the control of the processor hardware 
+In this way, when turned to the interrupt program,all the registers would have the same value as when the interrupt entry sequence started.
+#### Stack initialization
+- Before reaching main
+- After reaching the main function, you may again reinitialize the stack pointer
+##### Tips
+- Evaluate your targeted application. Decide the amount of stack that would be needed for the worst-case scenario of your application run time.
+- Know your processor's stack operation model (FD, FA, ED, EA)
+- Decide stack placement in the _RAM_ (middle, end, external memory)
+- In many applications, there may be second stage stack init. For example, if you want to allocate stack in external _SDRAM_ then first start with internal _RAM_, in the main or startup code initialize the _SDRAM_ then change the stack pointer to point to _SDRAM_.
+- If you are using the ARM Cortex Mx processor, make sure that the first location of the _vector table_ contains the initial stack address (_MSP_). The startup code of the project usually does this.
+- You may also use the linker script to decide the stack, heap and other RAM area boundaries. **Startup code** usually fetches boundary information from linker scripts.
+- In an RTOS scenario, the kernel code may use MSP to trace its own stack and configure PSP for use task's stack.
