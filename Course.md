@@ -411,3 +411,25 @@ Provides system implementation information, and system control. This includes co
 * Enable, disable, pend various interrupts and read the status of the active and pending interrupts
 * It is called _nested_ because, it supports pre-emting a lower priority interrupt handler when higher priority interrupt arrives
 
+## Section 11: Interrupt priority and configuration
+### Priority grouping
+* **Pre-Empt Priority**: When the processor is running interrupt handler, and another interrupt appears, _then the pre-empt priority values will be compared_, and interrupt with higher pre-empt priority (less in value) will be allowed to run. 
+* **Sub Priority**: This value is used _only when two interrupts with the same pre-empt priority values occur at the same time_. in this case, the exception with higher sub-priority (less in value) will be handled first.
+
+## Section 12: Exception entry and exit sequence
+### Exception entry sequence
+1. Pending bit set.
+2. Stacking and Vector fetch
+3. Entry to the handler and Active bit set
+4. Clears the pending status
+5. Now processor mode changed to handler mode
+6. Handler code is executing
+7. MSP will be used for any stack operations inside the handler
+
+### Exception exit sequence
+* In Cortex-M3/M4 processors the exception return mechanism is triggered using a special return address called ```EXC_RETURN```
+* ```EXC_RETURN```is generated during exception entry and is stored in the **LR**
+* When ```EXC_RETURN``` is written to PC it triggers the exception return
+
+#### EXC_RETURN
+During an exception handler entry, the value of the return address (PC) is not stored in the LR as it is done during calling of a normal C function. Instead the exception mechanism stores _the special value called **EXC_RETURN** in LR_
