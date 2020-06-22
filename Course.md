@@ -583,4 +583,162 @@ Round robin scheduling method - Time slices are assigned to each task in equal p
 [Cortex-M4 Devices Generic User Guide](http://infocenter.arm.com/help/topic/com.arm.doc.dui0553b/DUI0553.pdf)
 4.4 System timer, Systick
 
+## Section 16: Bare metal embedded and linker scripts
+### Cross Compilation
+Process in which the cross-toolchain runs on the host machine(PC) and creates executales that run on different machines(ARM).
 
+### Cross-compilation toolchains
+* Tool or a cross-compilation is a collection of binaries which allows you to compile, assemble, link your applications.
+* It also contains binaries to debug the application on the target
+* Toolchain also comes with other binaries which help you to analyze the executables
+    - dissect different sections of the executable
+    - disassemble
+    - extract symbol and size information
+    - convert executables to other formats such as bin, ihex
+    - provides 'C' standard libraries
+
+#### Popular tool-chains
+1. GNU Tools(GCC) for ARM Embedded Processors (free and open source)
+2. armcc from ARM Ltd. (ships with KEIL, code restriction version, requires licensing)
+
+#### Donwloading GCC toolchain for ARM embedded processors
+https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm
+
+#### Cross tolchain
+1. **Compiler, linker, assembler**
+_arm-none-eabi-gcc_ - Not only does compilation, it also assembles and links object files to create to create final executable file
+2. **Linker**
+_arm-none-eabi-ld_
+3. **Assembler**
+_arm-none-eabi-as_
+4. **Elf file analyzer**
+_arm-none-eabi-objdump_
+_arm-none-eabi-readelf_
+_arm-none-eabi-nm_
+5. **Format converter**
+_arm-none-eabi-objcopy_
+
+### Build process
+1. **Preprocessing stage**
+* All pre-processing directives of the source file will be resolved
+* **main.i** is created from **main.c** (Output .i)
+* Pre-processing directives such macros, #includes or the conditional compilation macros
+2. **Code generation**
+* Translating a source file into assembly language
+* Output will be **main.s**
+* higher level language code statements will be converted into processor architecural level mnemonics
+3. **Assembler stage**
+* All the things are done by the compiler itself. No need to invoke any other commands
+* compiler is arm-none-eabi-gcc
+* Assemly level mnemonics are converted into opcodes (machine codes for instructions)
+* Output will be **main.o** (Relocatable object file)
+* Relocatable - Processor architecture specific machine codes with no absolute address
+4. **Linking stage**
+* All relocatable object files will be taken up by the linker
+* It will resolve all the symbols and other information
+* It will merge the different sections of the .o files to create one executable
+* The format of final executable is **.elf** (Executable and Linkable format)
+* All relocatable object files are merged together to create one executable
+
+Using tool **objcopy** we can use **.elf** format to create some other formats as **.bin**(binary format) and **.ihex**(Intel hex format)  
+
+### Compilation and compiler flags
+[Using the GNU Compiler Collection](https://gcc.gnu.org/onlinedocs/gcc-9.2.0/gcc.pdf)
+3.2 Options Controlling the Kind of Output
+3.18 Machine dependent options
+
+```arm-none-eabi-gcc -c -mcpu=cortex-m4 -mthumb main.c -o main.o```
+
+### Makefile
+Automate process of generating files
+
+[Using the GNU Compiler Collection](https://gcc.gnu.org/onlinedocs/gcc-9.2.0/gcc.pdf)
+3.4 Options controlling C dialect
+
+main.o:main.c
+target:dependency $@ $^ 
+    $(CC) (CFLAGS) main.c -o main.o
+    $(CC) (CFLAGS) $^ -o $@
+    $(CC) (CFLAGS) -o $@ $^
+recipe
+
+#### Instal make for windows
+http://gnuwin32.sourceforge.net/packages/make.htm
+http://gnuwin32.sourceforge.net/downlinks/make.php
+
+### Analyzing .o files (Relocatable object files)
+* main.o is in elf format(Executable and linkable format)
+* ELF is a standard file format for object files and executable files when you use GCC
+* A file format standard describes a way of organizing various elements (data, read-only data, code, uninitialized data, etc.) of a program in different sections
+
+File formats:
+* the _Common Object File Format_ (**COFF**): Introduced by Unix System V
+* _Arm Image Format_ (**AIF**): Introduced by ARM
+* **SRECORD**: Introduced by Motorola
+
+Analyze relocatable files
+* _arm-none-eabi-objdump_ 
+* _arm-none-eabi-objdump -h main.o_  
+* _arm-none-eabi-objdump -d main.o_
+* _arm-none-eabi-objdump -D main.o > main_log_
+* _arm-none-eabi-objdump -s main.o_  
+
+### different sections of the program in an ELF format
+* .data - contains initialized data. Stored in RAM
+* .rodata - contains Read only data. Stored in ROM
+* .bss - contains data which are unitialized. Stored in RAM
+* .text - this section contains code(instructions). Stored in ROM
+* User defined sections - contains data/code which programmer demands to put in user defined sections. Stored in RAM or ROM
+* Some special sections - added by the compiler, contains some special data. Stored in ROM
+
+### Linker and locator
+* Use the linker to merge similar sections of different object files and to resolve all undefined symbols of different object files.
+* Locator (part of linker) takes the help of a linker script to understand how you wish to merge different sections and assigns mentioned addresses to different sections.
+
+### Different data of a program and related sections
+![](Files/Sections_of_data.PNG)
+
+#### .bss and .data section
+Block Started by symbol (bss)
+1. All the unitialized global variables and uninitialized static variables are stored in the _.bss_ section
+2. Since those variables do not have any initial values, they are not required to be stored in the _.data_ section since the _.data_ section consumes _FLASH_ space
+Imagine what would happen if there is a large global uninitialized array in the program, and if that is kep in the _.data_ section, it would unnecessarily consume flash space yet carries unuseful information at all
+3. _.bss_ section does not consume any _Flash_ space unlike _.data_ section
+4. You must reserve RAM space for the _.bss_ section by knowing its size and initialize those memory space to zero. This is typically done in startup code
+5. Linker helps you to determine the final size of the _.bss_ section. So, obtain the size information from a linker script symbols
+ 
+### Start-up file
+The importance of start-up file
+1. The start-up file is responsible for setting up the right environment for the main user code to run
+2. Code written in startup file runs before _main()_. So, you can say startup file calls _main()_
+3. Some parts of the start-up code file is the target (processor) dependent
+4. Start-up code takes care of vector table placement in code memory as required by the ARM Cortex Mx processor
+5. Start-up code may also take care of stack reinitialization
+6. Start-up code is responsible of _.data_, _.bss_ section initialization in main memory
+
+#### Creating a start-up file  
+1. Create a vector table for your microcontroller. Vector tables are MCU specific
+* Look for information: 
+[RM0368 Reference manual](https://www.st.com/resource/en/reference_manual/dm00096844-stm32f401xb-c-and-stm32f401xd-e-advanced-arm-based-32-bit-mcus-stmicroelectronics.pdf)
+Table 38. Vector table for STM32F401xB/CSTM32F401xD/E
+
+Total - 100 word addressable memory locations
+
+15 - system exceptions
+84 - interrupts
+1 - MSP
+100 * 4 = 400 bytes
+
+* Create an array to hold MSP and handlers addresses
+```uint32_t vectors[] = { store MSP  and address of various handlers here };```
+* Instruct the compiler not to include the above array in _.data_ section but in a different user defined section
+* Add new intructions to makefile 
+* Define a section for vector table 
+[Using the GNU Compiler Collection](https://gcc.gnu.org/onlinedocs/gcc-9.2.0/gcc.pdf)
+6.34.1 Common Variable Attributes
+
+2. Write a start-up code which initilizes _.data_, _.bss_ section in _SRAM_
+* Look for information:
+
+
+3. Call _main()_
