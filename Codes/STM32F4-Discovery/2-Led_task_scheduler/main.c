@@ -333,16 +333,16 @@ void SysTick_Handler(void)
 /* Implement fault handlers */
 void HardFault_Handler(void)
 {
-	printf("Exception : Hardfault \r\n");
+	//printf("Exception : Hardfault \r\n");
 	while(1);
 }
 void MemManage_Handler(void)
 {
-	printf("Exception : MemManage \r\n");
+	//printf("Exception : MemManage \r\n");
 	while(1);
 }
 void BusFault_Handler(void)
 {
-	printf("Exception : Bus Fault \r\n");
+	//printf("Exception : Bus Fault \r\n");
 	while(1);
 }
