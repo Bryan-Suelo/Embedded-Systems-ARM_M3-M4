@@ -2,8 +2,8 @@ ENTRY(Reset_Handler)
 
 MEMORY
 {
-    FLASH(rx):ORIGIN =0x080000000,LENGTH =1024K
-    SRAM(rwk):ORIGIN =0x020000000,LENGTH =128K
+    FLASH(rx):ORIGIN =0x08000000, LENGTH =1024K
+    SRAM(rwk):ORIGIN =0x02000000, LENGTH =128K
 }
 
 SECTIONS
@@ -13,6 +13,7 @@ SECTIONS
         *(.isr_vector)
         *(.text)
         *(.rodata)
+        .= ALIGN(4);
         _etext = .; /* Store the value of location counter into symbol */
     }> FLASH
 
@@ -20,13 +21,15 @@ SECTIONS
     {
         _sdata = .;
         *(.data)
+        .= ALIGN(4);
         _edata = .;
     }> SRAM AT> FLASH
 
     .bss :
     {
         _sbss = .;
-        *(.bss)
+        *(.bss);
+        .= ALIGN(4);
         _ebss = .;
     }> SRAM
 }
