@@ -5,6 +5,17 @@
 #define SRAM_SIZE       (128 * 1024U) // 128 KB
 #define SRAM_END        ((SRAM_START) + (SRAM_SIZE))
 
+extern uint32_t _etext;
+extern uint32_t _sdata;
+extern uint32_t _edata;
+extern uint32_t _la_data;
+extern uint32_t _sbss;
+extern uint32_t _ebss;
+
+/* Prototype functions*/
+void _libc_init_array(void);
+int main(void);
+
 #define STACK_START     SRAM_END
 
 void Reset_Handler(void);
@@ -209,9 +220,30 @@ void Default_Handler(void)
 void Reset_Handler(void)
 {
     /* Copy .data section to SRAM */
+    uint32_t size = (uint32_t)&_edata - (uint32_t)&_sdata; /* Quantity of data to be transfered*/
+
+    uint8_t *pDst = (uint8_t*)&_sdata; /* SRAM */
+    uint8_t *pSrc = (uint8_t*)&_la_data; /* Flash */
+
+    for (uint32_t i = 0; i < size; i++)
+    {
+        *pDst++ = *pSrc++; 
+    }
+
     /* Init the .bss section to zero in SRAM */
+    size = &_ebss - &_sbss;
+
+    pDst = (uint8_t*)&_sbss; /* SRAM */
+    for (uint32_t i = 0; i < size; i++)
+    {
+        *pDst++ = 0; 
+    }
+
     /* Call init function of std. library */
+    _libc_init_array();
+
     /* Call main() */
+    main();
 }
 
 

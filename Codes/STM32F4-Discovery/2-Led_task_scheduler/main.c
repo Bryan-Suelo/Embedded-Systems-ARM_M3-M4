@@ -60,12 +60,19 @@ typedef struct
 
 TCB_t user_task[MAX_TASK];
 
+/* Semi-hosting init function */
+extern void initialise_monitor_handles(void);
 
 int main(void)
 {
 	enable_processor_faults();
 
+	/* Initialize semihosting library */
+	initialise_monitor_handles();
+
 	init_scheduler_stack(SCHED_STACK_START);
+
+	//printf("Implementation of simple stack scheduler\r\n");
 
 	init_tasks_stack();
 
