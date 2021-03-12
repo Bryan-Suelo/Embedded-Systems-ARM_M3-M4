@@ -24,6 +24,10 @@ g_tick_count:
 current_task:
 	.byte	1
 	.comm	user_task,80,4
+	.section	.rodata
+	.align	2
+.LC0:
+	.ascii	"Implementation of simple stack scheduler\015\000"
 	.text
 	.align	1
 	.global	main
@@ -39,8 +43,11 @@ main:
 	push	{r7, lr}
 	add	r7, sp, #0
 	bl	enable_processor_faults
+	bl	initialise_monitor_handles
 	ldr	r0, .L3
 	bl	init_scheduler_stack
+	ldr	r0, .L3+4
+	bl	puts
 	bl	init_tasks_stack
 	bl	led_init_all
 	mov	r0, #1000
@@ -53,6 +60,7 @@ main:
 	.align	2
 .L3:
 	.word	536996864
+	.word	.LC0
 	.size	main, .-main
 	.align	1
 	.global	idle_task
@@ -238,10 +246,10 @@ init_scheduler_stack:
 	@ frame_needed = 1, uses_anonymous_args = 0
 	mov	r3, r0
 	.syntax unified
-@ 152 "main.c" 1
+@ 159 "main.c" 1
 	MSR MSP,r3
 @ 0 "" 2
-@ 153 "main.c" 1
+@ 160 "main.c" 1
 	BX LR
 @ 0 "" 2
 	.thumb
@@ -596,25 +604,25 @@ switch_sp_to_psp:
 	@ args = 0, pretend = 0, frame = 0
 	@ frame_needed = 1, uses_anonymous_args = 0
 	.syntax unified
-@ 244 "main.c" 1
+@ 251 "main.c" 1
 	PUSH {LR}
 @ 0 "" 2
-@ 245 "main.c" 1
+@ 252 "main.c" 1
 	BL get_psp_value
 @ 0 "" 2
-@ 246 "main.c" 1
+@ 253 "main.c" 1
 	MSR PSP,R0
 @ 0 "" 2
-@ 247 "main.c" 1
+@ 254 "main.c" 1
 	POP {LR}
 @ 0 "" 2
-@ 250 "main.c" 1
+@ 257 "main.c" 1
 	MOV R0,#0x02
 @ 0 "" 2
-@ 251 "main.c" 1
+@ 258 "main.c" 1
 	MSR CONTROL,R0
 @ 0 "" 2
-@ 252 "main.c" 1
+@ 259 "main.c" 1
 	BX LR
 @ 0 "" 2
 	.thumb
@@ -668,10 +676,10 @@ task_delay:
 	add	r7, sp, #0
 	str	r0, [r7, #4]
 	.syntax unified
-@ 265 "main.c" 1
+@ 272 "main.c" 1
 	MOV R0,#0x1
 @ 0 "" 2
-@ 265 "main.c" 1
+@ 272 "main.c" 1
 	MSR PRIMASK, R0
 @ 0 "" 2
 	.thumb
@@ -703,10 +711,10 @@ task_delay:
 	bl	schedule
 .L51:
 	.syntax unified
-@ 275 "main.c" 1
+@ 282 "main.c" 1
 	MOV R0,#0x0
 @ 0 "" 2
-@ 275 "main.c" 1
+@ 282 "main.c" 1
 	MSR PRIMASK, R0
 @ 0 "" 2
 	.thumb
@@ -735,34 +743,34 @@ PendSV_Handler:
 	@ args = 0, pretend = 0, frame = 0
 	@ frame_needed = 1, uses_anonymous_args = 0
 	.syntax unified
-@ 282 "main.c" 1
+@ 289 "main.c" 1
 	MRS R0,PSP
 @ 0 "" 2
-@ 284 "main.c" 1
+@ 291 "main.c" 1
 	STMDB R0!,{R4-R11}
 @ 0 "" 2
-@ 286 "main.c" 1
+@ 293 "main.c" 1
 	PUSH {LR}
 @ 0 "" 2
-@ 288 "main.c" 1
+@ 295 "main.c" 1
 	BL save_psp_value
 @ 0 "" 2
-@ 292 "main.c" 1
+@ 299 "main.c" 1
 	BL update_next_task
 @ 0 "" 2
-@ 294 "main.c" 1
+@ 301 "main.c" 1
 	BL get_psp_value
 @ 0 "" 2
-@ 296 "main.c" 1
+@ 303 "main.c" 1
 	LDMIA R0!,{R4-R11}
 @ 0 "" 2
-@ 298 "main.c" 1
+@ 305 "main.c" 1
 	MSR PSP,R0
 @ 0 "" 2
-@ 300 "main.c" 1
+@ 307 "main.c" 1
 	POP {LR}
 @ 0 "" 2
-@ 302 "main.c" 1
+@ 309 "main.c" 1
 	BX LR
 @ 0 "" 2
 	.thumb
@@ -895,7 +903,7 @@ SysTick_Handler:
 	.size	SysTick_Handler, .-SysTick_Handler
 	.section	.rodata
 	.align	2
-.LC0:
+.LC1:
 	.ascii	"Exception : Hardfault \015\000"
 	.text
 	.align	1
@@ -917,11 +925,11 @@ HardFault_Handler:
 .L70:
 	.align	2
 .L69:
-	.word	.LC0
+	.word	.LC1
 	.size	HardFault_Handler, .-HardFault_Handler
 	.section	.rodata
 	.align	2
-.LC1:
+.LC2:
 	.ascii	"Exception : MemManage \015\000"
 	.text
 	.align	1
@@ -943,11 +951,11 @@ MemManage_Handler:
 .L74:
 	.align	2
 .L73:
-	.word	.LC1
+	.word	.LC2
 	.size	MemManage_Handler, .-MemManage_Handler
 	.section	.rodata
 	.align	2
-.LC2:
+.LC3:
 	.ascii	"Exception : Bus Fault \015\000"
 	.text
 	.align	1
@@ -969,6 +977,6 @@ BusFault_Handler:
 .L78:
 	.align	2
 .L77:
-	.word	.LC2
+	.word	.LC3
 	.size	BusFault_Handler, .-BusFault_Handler
 	.ident	"GCC: (GNU Tools for Arm Embedded Processors 9-2019-q4-major) 9.2.1 20191025 (release) [ARM/arm-9-branch revision 277599]"

@@ -601,7 +601,7 @@ Process in which the cross-toolchain runs on the host machine(PC) and creates ex
 1. GNU Tools(GCC) for ARM Embedded Processors (free and open source)
 2. armcc from ARM Ltd. (ships with KEIL, code restriction version, requires licensing)
 
-#### Donwloading GCC toolchain for ARM embedded processors
+#### Downloading GCC toolchain for ARM embedded processors
 https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm
 
 #### Cross tolchain
@@ -646,6 +646,7 @@ Using tool **objcopy** we can use **.elf** format to create some other formats a
 [Using the GNU Compiler Collection](https://gcc.gnu.org/onlinedocs/gcc-9.2.0/gcc.pdf)
 3.2 Options Controlling the Kind of Output
 3.18 Machine dependent options
+3.18 ARM options
 
 ```arm-none-eabi-gcc -c -mcpu=cortex-m4 -mthumb main.c -o main.o```
 
@@ -662,9 +663,12 @@ target:dependency $@ $^
     $(CC) (CFLAGS) -o $@ $^
 recipe
 
-#### Instal make for windows
+#### Install make for windows
 http://gnuwin32.sourceforge.net/packages/make.htm
 http://gnuwin32.sourceforge.net/downlinks/make.php
+
+Follow the instructions:
+http://lifeofageekadmin.com/install-gnuwin32-tools-on-windows/
 
 ### Analyzing .o files (Relocatable object files)
 * main.o is in elf format(Executable and linkable format)
@@ -718,27 +722,146 @@ The importance of start-up file
 
 #### Creating a start-up file  
 1. Create a vector table for your microcontroller. Vector tables are MCU specific
-* Look for information: 
-[RM0368 Reference manual](https://www.st.com/resource/en/reference_manual/dm00096844-stm32f401xb-c-and-stm32f401xd-e-advanced-arm-based-32-bit-mcus-stmicroelectronics.pdf)
-Table 38. Vector table for STM32F401xB/CSTM32F401xD/E
+    * Look for information: 
+    [RM0368 Reference manual](https://www.st.com/resource/en/reference_manual/dm00096844-stm32f401xb-c-and-stm32f401xd-e-advanced-arm-based-32-bit-mcus-stmicroelectronics.pdf)
+    Table 38. Vector table for STM32F401xB/CSTM32F401xD/E
 
-Total - 100 word addressable memory locations
+    Total - 100 word addressable memory locations
 
-15 - system exceptions
-84 - interrupts
-1 - MSP
-100 * 4 = 400 bytes
+    15 - system exceptions
+    84 - interrupts
+    1 - MSP
+    100 * 4 = 400 bytes
 
-* Create an array to hold MSP and handlers addresses
-```uint32_t vectors[] = { store MSP  and address of various handlers here };```
-* Instruct the compiler not to include the above array in _.data_ section but in a different user defined section
-* Add new intructions to makefile 
-* Define a section for vector table 
-[Using the GNU Compiler Collection](https://gcc.gnu.org/onlinedocs/gcc-9.2.0/gcc.pdf)
-6.34.1 Common Variable Attributes
+    * Create an array to hold MSP and handlers addresses
+    ```uint32_t vectors[] = { store MSP  and address of various handlers here };```
+    * Instruct the compiler not to include the above array in _.data_ section but in a different user defined section
+    * Add new intructions to makefile 
+    * Define a section for vector table: 
+    [Using the GNU Compiler Collection](https://gcc.gnu.org/onlinedocs/gcc-9.2.0/gcc.pdf)
+    6.34.1 Common Variable Attributes
+    * Validate section was created
+    ```arm-none-eabi-objdump.exe -h stm32_startup.o```
+    * Look for information:
+    [RM0368 Reference manual](https://www.st.com/resource/en/reference_manual/dm00096844-stm32f401xb-c-and-stm32f401xd-e-advanced-arm-based-32-bit-mcus-stmicroelectronics.pdf)
+    Table 38. Vector table
+    * Add all the IRQs and System handlers
 
 2. Write a start-up code which initilizes _.data_, _.bss_ section in _SRAM_
-* Look for information:
-
-
+    *  
 3. Call _main()_
+
+### Linker scripts
+1. Linker script is a text file which explains how different sections of the object files should be merged to create an output file
+2. Linker and locator combination assigns unique absolute addresses to different sections of the output file by referring to address information mentioned in the linker script
+3. Linker script also includes the code and data memory address and size information
+4. Linker scripts are written using the GNU linker command language
+5. GNU linker script has the file extension of .ld
+6. User must supply linker script at the linking phase to the linker using _-T_ option
+
+#### Linker script commands
+1. ENTRY
+    * This command is used to set the _Entry point address_ infomation in the header or final elf file generated
+    * In our case, _Reset handler_ is the entry point into the application. The first piece of code that executes right after the processor reset
+    * The debugger uses this information to locate the first function to execute
+    * Not a mandatory command to use, but required when you debug the elf file using the debugger (GDB)
+    * Syntax: ```Entry(symbol_name)``` ```Entry(Reset_Handler)```
+2. MEMORY
+    * This command allows you to describe the different memories present in the target and their start address and size information
+    * The linker uses information mentioned in this command to assign addresses to merged section
+    * The information is given under this command also helps the linker to calculate total code and data memory consumed so far and throw an error message if data, code, heap or stack areas cannot fit into available size
+    * By using memory command, you can fine-tune various memories available in your target and allow different sections to occupy different memory
+    * Typically one linker script has one memory command
+    * Syntax: ```MEMORY {name(attr): ORIGIN = origin, LENGTH = len }```
+        * **name** - defines name of the memory region which will be later referenced by other parts of the linker script
+        * **attr** - defines the attribute list of the memory region
+        
+        | Attribute letter| Meaning|
+        | ----------------|-------------------------------------|
+        |  R              | Read-only sections                  |
+        |  W              | Read and write sections             |
+        |  X              | Sections containing executable code |
+        |  A              | Allocated sections                  |
+        |  I              | Initialized sections                |
+        |  L              | Same as 'I'                         |
+        |  !              | Invert the sense of any of the following attribute|
+
+        * **ORIGIN** - defines origin address of the memory region
+        * **LENGTH** - defines the length information
+ 3. SECTIONS
+    * Used to create different output sections in the final elf executable generated
+    * Important command by which you can instruct the linker how to merge the input sections to yield an output section
+    * This command also controls the order in which different output sections appear in the elf file generated
+    * By using SECTIONS, you also mention the placement of a section in a memory region. For example, you instruct the linker to place the _.text_ section in the _FLASH memory region_, which is described by the memory command
+    * Syntax: ```SECTIONS{.text{}>(vma) AT>(lma)}```
+        * **vma** - Virtual memory address
+        * **lma** - Load memory address
+4. Location counter (.)
+    * Special linker symbol denoted by a dot '.'
+    * Symbol called _location counter_ since linker automatically updates this symbol with location (address) information
+    * Use location counter inside the linker script to track and define boundaries of various sections
+    * You can also set location counter to any specific value while writing linker script
+    * Location counter should appear only inside the _SECTIONS_ command
+    * The location counter is incremented by the size of the output section
+
+#### Linker script symbols
+* A symbol is the name of an address
+* A symbol declaration is not equivalent to a variable declaration what you do in your 'C' application
+
+#### Linking and linker flags
+```arm-none-eabi-gcc -nostdlib -T stm32_ls.ld *.o -o final.elf```
+```arm-none-eabi-gcc-objdump.exe -h final.elf```
+
+### Open on Chip Debugger (OpenOCD)
+* Aims to provide debugging, in-systems programming, and boundary scan testing for embedded target devices
+* Its free and opensource host application allows you to program, debug, and analyze your applications using GDB
+* It supports various target boards based on different processor architecture
+* Currently supports many types of debug adapters: USB-based, parallel port-based, and other standalone boxes that run OpenOCD internally
+
+#### Programming adapters
+* Used to get access to debug interface of the target with native protocol signaling such as SWD or JTAG since HOST does not support such interfaces
+* It does protocol conversion
+* Mainly debug adapter helps you to download and debug code
+* Advaced debug adapters help to capture trace events such as on the fly instruction trace and profiling information
+
+#### Steps to download the code using OpenOCD
+1. Download and install OpenOCD
+    * http://openocd.org/getting-openocd/
+    * Unofficial binary packages
+    * https://github.com/ilg-archived/openocd/releases
+    * Copy address installation
+    * Add address to Path in environment variables
+2. Install telnet client(Putty) o GDB client
+    * https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html
+3. Run OpenOCD with the board configuration file
+    * Add this command to makefile: ```load:
+	openocd -f board/st_nucleo_f4.cfg```
+4. Connect to the OpenOCD via Telnet Client or GDB client
+    *  ```arm-none-eabi-gdb.exe```
+    *  ```target remote localhost:3333```
+    *  ```monitor reset init``` - used to differentiate between gdb command and openocd command
+5. Issue commands over Telnet or GDB client to OpenOCD to download and debug the code
+    * General commands: http://openocd.org/doc/html/General-Commands.html
+    * ```monitor flash write_image erase final.elf```
+    * ```monitor reset halt```
+    * ```monitor resume``` - Start program
+    * ```monitor halt`` - Stop of halt
+    * ```monitor reset``` - Reset program
+    * When using semihosting mode ```arm semihosting enable```
+    * ```monitor mdw 0x20000000 4``` - access to specific location of code
+    * ```monitor bp 0x080001c6 2``` - create a breakpoint
+    * ```monitor rbp 0x080001c6``` - remove a breakpoint
+
+### C standard library integration
+#### Newlib  
+* 'C' standard library implementation intended for use on embedded systems, introduced by Cygnus Solutions (Red Hat) 
+* written as a _Glibc_ (GNU libc) replacement for embedded systems. It can be used with no OS (bare metal) or with a lightweight RTOS
+* Newlib ships with GNU ARM toolchain installation as the default C standard library
+* GNU libc (glibc) includes ISO C, POSIX, System V, and XPG interfaces. uClibc provides ISO C, POSIX and System V, while Newlib provides only ISO C
+#### Newlib-nano
+* Due to the increased feature set in newlib, it has become too bloated to use on the systems where the amount of memory is very much limited
+* To provide a C library with a minimal memory footprint, suited for use with micro-controllers, ARM introduced newlib-nano based on newlib
+#### Low level system Calls
+* The idea of Newlib is to implement the hardware-independent parts of the standard C library and rely on a few low-level system calls that must be implemented with the target hardware in mind.
+* When you are using newlib, you must implement the system calls appropiately to support devices, file systems and memory management.
+
